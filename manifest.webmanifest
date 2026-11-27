@@ -1,0 +1,9 @@
+{
+  "name": "Beer League 2026",
+  "short_name": "Beer League",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F1A14",
+  "theme_color": "#1B4D33",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

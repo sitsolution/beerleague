@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Beer League 2026</title>
+<meta name="theme-color" content="#1B4D33">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Beer League 2026">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a cricket scoreboard on mown grass up top, one tab at a time below, thumb-reach tab bar.
+   Palette: pitch green, ale amber, chalk, kookaburra red. Type: Big Shoulders Display for numerals, Figtree for text. */
+:root{
+  --bg:#EDF1E9; --surface:#F8FAF5; --surface-2:#E1E8DB; --fg:#14241A; --muted:#566559; --line:#C9D3C2;
+  --pitch:#1B4D33; --pitch-2:#1F563A; --on-pitch:#EAF2E4; --on-pitch-muted:#A9C2B1; --led:#F6B93B;
+  --ale:#E9A21B; --on-ale:#2A1B00; --ale-soft:#FAEBC9; --ale-ink:#7A4E00;
+  --ok:#1D7A44; --ok-soft:#D5EBDC; --red:#B3261E; --red-soft:#F7DAD6; --bar:#2E7D52; --chip-l:40%;
+  --display:'Big Shoulders Display','Oswald','Arial Narrow',system-ui,sans-serif;
+  --body:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1A14; --surface:#17251D; --surface-2:#203227; --fg:#E7EFE3; --muted:#9DB0A2; --line:#2B4134;
+  --pitch:#0C2418; --pitch-2:#0F2B1D; --ale:#F0B134; --on-ale:#2A1B00; --ale-soft:#3A2E10; --ale-ink:#F0C25E;
+  --ok:#6FD39A; --ok-soft:#173A27; --red:#FF8A80; --red-soft:#3F1D1A; --bar:#4FB37E; --chip-l:62%; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1A14; --surface:#17251D; --surface-2:#203227; --fg:#E7EFE3; --muted:#9DB0A2; --line:#2B4134;
+  --pitch:#0C2418; --pitch-2:#0F2B1D; --ale:#F0B134; --on-ale:#2A1B00; --ale-soft:#3A2E10; --ale-ink:#F0C25E;
+  --ok:#6FD39A; --ok-soft:#173A27; --red:#FF8A80; --red-soft:#3F1D1A; --bar:#4FB37E; --chip-l:62%; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--body);-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--ale);outline-offset:2px}
+.wrap{max-width:640px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,p,ol,ul{margin:0;padding:0}
+ol,ul{list-style:none}
+
+/* hero scoreboard */
+.hero{margin-top:calc(-1 * env(safe-area-inset-top,0px));padding-top:calc(env(safe-area-inset-top,0px) + 14px);padding-bottom:16px;color:var(--on-pitch);
+  background:repeating-linear-gradient(90deg,var(--pitch) 0 38px,var(--pitch-2) 38px 76px)}
+.topline{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+h1{font:800 34px/1 var(--display);letter-spacing:.02em;text-transform:uppercase}
+.sub{color:var(--on-pitch-muted);font-size:13px;margin-top:4px}
+.topright{display:flex;align-items:center;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.12);white-space:nowrap}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--ale)}
+.chip[data-state="live"] i{background:#6FD39A}
+.chip[data-state="local"] i{background:var(--on-pitch-muted)}
+.chip[data-state="stale"] i{background:#FF8A80}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:var(--on-pitch);display:grid;place-items:center}
+.icon-btn svg{width:20px;height:20px}
+.scoreboard{display:grid;grid-template-columns:1fr 1fr 1.3fr;margin-top:16px;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(0,0,0,.18)}
+.cell{padding:10px 12px 8px;min-width:0}
+.cell+.cell{border-left:1px solid rgba(255,255,255,.14)}
+.lbl{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-pitch-muted);font-weight:600}
+.cell b{display:block;font:700 clamp(34px,11vw,50px)/1.05 var(--display);color:var(--led);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cell b.tick{animation:tick .35s ease-out}
+@keyframes tick{from{transform:translateY(-6px);opacity:.3}to{transform:none;opacity:1}}
+.note-line{margin-top:8px;font-size:12px;color:var(--on-pitch-muted)}
+
+/* shared */
+main{padding-block:16px 108px}
+.banner{background:var(--ale-soft);color:var(--ale-ink);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+.h{font:700 13px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.h:first-child{margin-top:4px}
+.h-note{font-weight:500;letter-spacing:0;text-transform:none;font-size:12px}
+.btn{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;font-weight:600;min-height:44px}
+.btn.primary{background:var(--ale);border-color:var(--ale);color:var(--on-ale)}
+.btn.big{width:100%;min-height:54px;font-size:16px;margin-top:16px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:hsl(var(--h,150) 65% var(--chip-l));flex:none}
+.empty{border:1.5px dashed var(--line);border-radius:12px;padding:26px 18px;text-align:center;color:var(--muted)}
+.empty b{display:block;font:700 24px/1.1 var(--display);color:var(--fg);text-transform:uppercase;margin-bottom:6px}
+.empty .btn{margin-top:14px}
+
+/* awards */
+.awards{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:4px;margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)))}
+.award{flex:none;scroll-snap-align:start;width:152px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 12px;min-width:0}
+.award .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--ale-ink)}
+.award .n{font:700 22px/1.15 var(--display);margin-top:4px;overflow-wrap:anywhere}
+.award .s{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* leaderboard */
+.row{border-bottom:1px solid var(--line)}
+.row-main{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;padding:11px 0 8px;min-height:56px}
+.rank{font:700 30px/1 var(--display);color:var(--muted);font-variant-numeric:tabular-nums}
+.row.r1 .rank{color:var(--ale-ink)}
+.nm{display:block;font-weight:700;font-size:16px;overflow-wrap:anywhere}
+.tm{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin-top:1px}
+.score{text-align:right}
+.score b{display:block;font:700 34px/1 var(--display);font-variant-numeric:tabular-nums}
+.score small{font-size:12px;color:var(--muted)}
+.bar{height:4px;background:var(--surface-2);border-radius:2px;margin-bottom:10px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--bar);border-radius:2px}
+.row.r1 .bar span{background:var(--ale)}
+.detail{padding:2px 0 14px 46px;display:grid;gap:8px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{background:var(--surface-2);border-radius:999px;padding:3px 10px;font-size:12.5px}
+.tag.water{background:var(--ok-soft);color:var(--ok)}
+.detail .line{font-size:13px;color:var(--muted)}
+.detail .btn{justify-self:start;min-height:38px;padding:6px 12px;font-size:13px;text-align:left}
+
+/* log */
+.field label{display:block;font-weight:600;margin-bottom:6px}
+.who-row{display:flex;gap:8px}
+select,input[type=text],input[type=number]{width:100%;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;font-size:16px}
+.who-row select{flex:1;min-width:0}
+.who-row .btn{flex:none}
+.brands{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.brand{text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;min-height:64px;display:grid;gap:2px;align-content:center}
+.brand b{font-weight:700;font-size:15px;line-height:1.2;overflow-wrap:anywhere}
+.brand span{font-size:12.5px;color:var(--muted)}
+.brand[aria-pressed="true"]{border-color:var(--ale);background:var(--ale-soft);box-shadow:inset 0 0 0 1px var(--ale)}
+.brand.water{border-style:dashed}
+.brand.water[aria-pressed="true"]{border-color:var(--ok);background:var(--ok-soft);box-shadow:inset 0 0 0 1px var(--ok)}
+.qty{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.step{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:10px;background:var(--surface)}
+.step button{width:46px;height:44px;border:0;background:none;font-size:22px;font-weight:700}
+.step output{min-width:44px;text-align:center;font:700 28px/1 var(--display);font-variant-numeric:tabular-nums}
+.qchip{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;min-height:44px;font-weight:600}
+.qchip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.feed li{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);min-height:48px}
+.f-main{flex:1;min-width:0;overflow-wrap:anywhere}
+.f-main span{color:var(--muted)}
+.f-time{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.x{border:0;background:none;color:var(--muted);min-width:44px;min-height:44px;font-size:18px;border-radius:8px}
+.x.arm{color:var(--red);font-size:13px;font-weight:700}
+.feed-empty{color:var(--muted);padding:8px 0}
+
+.brand{cursor:default}
+.brand[data-on="true"]{border-color:var(--ale);background:var(--ale-soft);box-shadow:inset 0 0 0 1px var(--ale)}
+.brand.water[data-on="true"]{border-color:var(--ok);background:var(--ok-soft);box-shadow:inset 0 0 0 1px var(--ok)}
+.mini{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:6px}
+.mini button{width:44px;height:40px;border:1.5px solid var(--line);background:var(--bg);border-radius:10px;font-size:20px;font-weight:700}
+.mini button:disabled{opacity:.35;cursor:not-allowed}
+.mini output{flex:1;text-align:center;font:700 26px/1 var(--display);font-variant-numeric:tabular-nums}
+.mix{display:block;font-size:12.5px;color:var(--ale-ink);margin-top:1px;overflow-wrap:anywhere}
+/* teams */
+.team{padding:12px 0 10px;border-bottom:1px solid var(--line)}
+.team-top{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:8px;align-items:center}
+.team .tn{font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px;overflow-wrap:anywhere}
+.team .ts{font-size:12.5px;color:var(--muted);margin-top:1px}
+.team .bar{margin:9px 0 0}
+
+/* bill */
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sum div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.sum span{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.sum b{font:700 28px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.bill li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.bill .nm{font-size:15px}
+.bill .amt{font:700 24px/1 var(--display);font-variant-numeric:tabular-nums;text-align:right}
+.pill{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;font-size:12.5px;font-weight:700;padding:6px 12px;min-height:34px;min-width:74px}
+.pill.paid{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.pill.due{color:var(--muted)}
+.stock li{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,52px);gap:6px;padding:8px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;align-items:center}
+.stock li>*:not(:first-child){text-align:right}
+.stock .hd{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.low{color:var(--red);font-weight:700}
+.fine{font-size:12.5px;color:var(--muted);margin-top:18px}
+
+/* tab bar + toast */
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px));z-index:5}
+.tabs div{max-width:640px;margin-inline:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.tabs button{background:none;border:0;border-radius:10px;min-height:52px;display:grid;justify-items:center;align-content:center;gap:2px;font-size:11.5px;font-weight:600;color:var(--muted)}
+.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tabs button[aria-selected="true"]{color:var(--fg);background:var(--ale-soft)}
+.toast{position:fixed;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));bottom:calc(76px + env(safe-area-inset-bottom,0px));max-width:608px;margin-inline:auto;background:var(--fg);color:var(--bg);border-radius:12px;padding:12px 14px;font-weight:600;z-index:8;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+
+/* sheets */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:640px;max-height:90%;overflow-y:auto;background:var(--bg);border-radius:18px 18px 0 0;padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:grid;gap:14px}
+.sheet h2{font:800 26px/1 var(--display);text-transform:uppercase}
+.sheet .hint{font-size:13px;color:var(--muted)}
+.actions{display:flex;gap:8px}
+.actions .btn{flex:1}
+.set-grid{display:grid;gap:8px}
+.set-row{display:grid;grid-template-columns:minmax(0,1fr) 72px 72px 40px;gap:6px;align-items:center}
+.set-row input{padding:8px 8px;min-height:40px}
+.set-row .x{min-width:40px;min-height:40px}
+.set-head{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.team-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.linkbtn{background:none;border:0;color:var(--ale-ink);text-decoration:underline;padding:0;font-weight:600;font-size:inherit}
+@media (prefers-reduced-motion:reduce){.cell b.tick{animation:none}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="topline">
+      <div>
+        <h1>Beer League 2026</h1>
+        <p class="sub" id="sub">Cricket day</p>
+      </div>
+      <div class="topright">
+        <span class="chip" id="status" data-state="connecting"><i></i><span id="status-t">Connecting</span></span>
+        <button class="icon-btn" id="gear" data-act="open-settings" aria-label="Match settings" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="scoreboard" role="group" aria-label="Match totals">
+      <div class="cell"><span class="lbl">Overs</span><b id="s-cans">0</b></div>
+      <div class="cell"><span class="lbl">Water</span><b id="s-overs">0</b></div>
+      <div class="cell"><span class="lbl">Tab</span><b id="s-bill">₹0</b></div>
+    </div>
+    <p class="note-line">One beer is one over. Water breaks are counted too.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="banner" id="banner" hidden></div>
+
+  <section class="tab" id="tab-board">
+    <div id="awards-wrap" hidden>
+      <h2 class="h">Awards</h2>
+      <div class="awards" id="awards"></div>
+    </div>
+    <h2 class="h">Leaderboard <span class="h-note">tap a name for the breakdown</span></h2>
+    <ol id="board-list"></ol>
+    <button class="btn" id="btn-addplayer" data-act="join-new" hidden style="margin-top:14px;width:100%">+ Add a player</button>
+    <p class="fine" id="whoami" hidden></p>
+  </section>
+
+  <section class="tab" id="tab-log" hidden>
+    <div class="field">
+      <label for="team">1. Pick the team</label>
+      <select id="team"></select>
+    </div>
+    <div class="field" style="margin-top:12px">
+      <label for="who">2. Who is drinking</label>
+      <div class="who-row">
+        <select id="who"></select>
+        <button class="btn" data-act="join-new" id="btn-newplayer">+ Player</button>
+      </div>
+    </div>
+    <h2 class="h">3. What they drank <span class="h-note">mix brands as you like</span></h2>
+    <div class="brands" id="brands"></div>
+    <button class="btn primary big" id="add" data-act="add" disabled>Add</button>
+    <h2 class="h">Latest entries</h2>
+    <ul class="feed" id="feed"></ul>
+  </section>
+
+  <section class="tab" id="tab-teams" hidden>
+    <h2 class="h">Team table <span class="h-note">by total cans</span></h2>
+    <ol id="team-list"></ol>
+  </section>
+
+  <section class="tab" id="tab-bill" hidden>
+    <div class="sum" id="bill-sum"></div>
+    <h2 class="h">Who owes what <span class="h-note" id="bill-note"></span></h2>
+    <ul class="bill" id="bill-list"></ul>
+    <h2 class="h">Stock check</h2>
+    <ul class="stock" id="stock"></ul>
+    <button class="btn" id="btn-csv" data-act="csv" hidden style="margin-top:16px;width:100%">Download bill as CSV</button>
+    <p class="fine">Prices come from the organiser's settings, so a late price fix updates every bill. Drink responsibly, and nobody drives home.</p>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="Sections">
+  <div role="tablist">
+    <button role="tab" data-act="tab" data-tab="board" aria-selected="true"><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>Board</button>
+    <button role="tab" data-act="tab" data-tab="log" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Add cans</button>
+    <button role="tab" data-act="tab" data-tab="teams" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 19c0-3.2 2.7-5 6-5s6 1.8 6 5M15.5 14.4c3 0 5.5 1.2 5.5 4.6"/></svg>Teams</button>
+    <button role="tab" data-act="tab" data-tab="bill" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M7 5h10M7 9h10M7 5c5.5 0 6 4.5 2.5 5.8C8.5 11.2 7 11.5 7 11.5l8 7.5"/></svg>Bill</button>
+  </div>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<div class="overlay" id="sheet-player" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sp-title">
+    <h2 id="sp-title">Join the match</h2>
+    <p class="hint" id="sp-hint">Pick your team first, then the name your mates will recognise.</p>
+    <div class="field"><label for="sp-team">1. Your team</label><select id="sp-team"></select></div>
+    <div class="field"><label for="sp-name">2. Your name</label><input type="text" id="sp-name" maxlength="24" autocomplete="off"></div>
+    <div class="actions">
+      <button class="btn" data-act="close-sheet">Cancel</button>
+      <button class="btn primary" data-act="save-player">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="sheet-settings" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ss-title">
+    <h2 id="ss-title">Match settings</h2>
+    <div>
+      <h3 class="set-head" style="margin:0 0 8px">Team names</h3>
+      <div class="team-inputs" id="ss-teams"></div>
+    </div>
+    <div>
+      <div class="set-row set-head"><span>Brand</span><span>₹ / can</span><span>Cans bought</span><span></span></div>
+      <div class="set-grid" id="ss-brands"></div>
+      <button class="btn" data-act="add-brand-row" style="margin-top:8px">+ Add a brand</button>
+    </div>
+    <div class="field"><label for="ss-shared">Shared costs in ₹ (ice, snacks, ground), split equally</label><input type="number" id="ss-shared" inputmode="numeric" min="0" step="1"></div>
+    <div class="actions">
+      <button class="btn" data-act="close-sheet">Cancel</button>
+      <button class="btn primary" data-act="save-settings">Save settings</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="sheet-auth" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sa-title">
+    <h2 id="sa-title">Sign in to play</h2>
+    <p class="hint">Sign in with Google so your entries carry your name. Your Google details are only used to identify you in this tournament.</p>
+    <button class="btn primary big" data-act="google" style="margin-top:0">Continue with Google</button>
+    <p class="hint" id="sa-err" hidden></p>
+  </div>
+</div>
+<div class="overlay" id="sheet-claim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sc-title">
+    <h2 id="sc-title">Who runs this tournament?</h2>
+    <p class="hint">Nobody is the organiser yet. If you set this app up, claim it to manage players, beer prices and bills. This can only be done once.</p>
+    <div class="actions">
+      <button class="btn" data-act="claim-no">I am just playing</button>
+      <button class="btn primary" data-act="claim-yes">I am the organiser</button>
+    </div>
+  </div>
+</div>
+
+<script src="firebase-config.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+
+var DEFAULT_BRANDS=[
+  {id:'tuborg',name:'Tuborg',price:160,stock:0},
+  {id:'kf',name:'Kingfisher',price:150,stock:0},
+  {id:'kf-ultra',name:'Kingfisher Ultra',price:190,stock:0},
+  {id:'london-pilsner',name:'London Pilsner',price:120,stock:0},
+  {id:'bud',name:'Budweiser',price:200,stock:0},
+  {id:'corona',name:'Corona',price:250,stock:0},
+  {id:'hoegaarden',name:'Hoegaarden',price:250,stock:0},
+  {id:'carlsberg',name:'Carlsberg',price:200,stock:0},
+  {id:'beer1664',name:'Beer 1664',price:265,stock:0}
+];
+var WATER={id:'water',name:'Water',price:0,stock:0,water:true};
+var DEFAULT_TEAMS=['Budweiser Butchers','Tuborg Thrashers','Kingfisher Killers','Carlsberg Conquerors','Heineken Hitters','Corona Crushers','Hoegaarde Hurricanes'];
+
+var state={players:{},drinks:{},config:null,paid:{}};
+var ui={tab:'board',who:null,team:null,cart:{},brand:null,qty:1,open:{},arm:null,mode:'connecting',canWrite:true,isAdmin:false,
+  ready:false,playersLive:false,joinAsked:false,busy:false,sheet:null};
+var db=null,user=null,dl=null,myUid=null,cur=null;
+
+/* ---------- helpers ---------- */
+function rid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4)}
+function safeId(s){return String(s).replace(/[^A-Za-z0-9_\-.~:@+]/g,'_').slice(0,120)}
+function money(n){return '₹'+Math.round(n).toLocaleString('en-IN')}
+function overs(c){return String(c)}
+function timeStr(ts){try{return new Date(ts).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'})}catch(e){return ''}}
+function teamHue(i){return (i*51+18)%360}
+function cfg(){
+  var c=state.config||{};
+  return {
+    brands:Array.isArray(c.brands)&&c.brands.length?c.brands:DEFAULT_BRANDS,
+    teams:Array.isArray(c.teams)&&c.teams.length===7?c.teams:DEFAULT_TEAMS,
+    shared:Math.max(0,Number(c.shared)||0)
+  };
+}
+function brandMap(){var m={water:WATER};cfg().brands.forEach(function(b){m[b.id]=b});return m}
+function teamName(i){return cfg().teams[i]||('Team '+(i+1))}
+function plural(n,w){return n+' '+w+(n===1?'':'s')}
+
+/* ---------- local fallback storage ---------- */
+var LS='tallycup.local.v1',PREF='tallycup.pref.v1';
+function loadLocal(){try{var j=JSON.parse(localStorage.getItem(LS)||'null');if(j){state.players=j.players||{};state.drinks=j.drinks||{};state.config=j.config||null;state.paid=j.paid||{}}}catch(e){}}
+function persist(){if(db)return;try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){}}
+function loadPref(){try{var j=JSON.parse(localStorage.getItem(PREF)||'null');if(j&&j.who)ui.who=j.who;if(j&&j.team!=null)ui.team=j.team}catch(e){}}
+function savePref(){try{localStorage.setItem(PREF,JSON.stringify({who:ui.who,team:ui.team}))}catch(e){}}
+
+/* ---------- numbers ---------- */
+function compute(drinks){
+  var bm=brandMap(),P={},now=Date.now();
+  Object.keys(state.players).forEach(function(id){P[id]={id:id,cans:0,water:0,cost:0,by:{},recent:0,first:Infinity}});
+  var total=0,water=0,cost=0,perBrand={};
+  Object.keys(drinks).forEach(function(k){
+    var d=drinks[k],p=P[d.pid];if(!p)return;
+    var q=Math.max(0,Number(d.qty)||0);
+    if(d.brand==='water'){p.water+=q;water+=q;return}
+    var b=bm[d.brand],price=b?(Number(b.price)||0):(Number(d.pr)||0);
+    p.cans+=q;p.cost+=q*price;p.by[d.brand]=(p.by[d.brand]||0)+q;
+    total+=q;cost+=q*price;perBrand[d.brand]=(perBrand[d.brand]||0)+q;
+    if(now-d.ts<3600000)p.recent+=q;
+    if(d.ts<p.first)p.first=d.ts;
+  });
+  return {P:P,total:total,water:water,cost:cost,perBrand:perBrand};
+}
+function ranked(P){
+  var a=Object.keys(P).map(function(id){var p=P[id],pl=state.players[id]||{};return Object.assign({},p,{name:pl.name||'?',team:(pl.team|0)})});
+  a.sort(function(x,y){return y.cans-x.cans||x.name.localeCompare(y.name)});
+  var r=0,prev=null;a.forEach(function(p,i){if(p.cans!==prev){r=i+1;prev=p.cans}p.rank=r});
+  return a;
+}
+function findMine(){
+  if(db&&myUid){var ks=Object.keys(state.players);for(var i=0;i<ks.length;i++){if(state.players[ks[i]].uid===myUid)return state.players[ks[i]]}return null}
+  return ui.who&&state.players[ui.who]?state.players[ui.who]:null;
+}
+
+/* ---------- rendering ---------- */
+function setText(el,v){if(el.textContent!==v){el.textContent=v;el.classList.remove('tick');void el.offsetWidth;el.classList.add('tick')}}
+function renderStatus(){
+  var chip=$('#status'),st=ui.mode,txt={live:'Live',connecting:'Connecting',local:'This phone only',stale:'Offline'}[st]||'';
+  chip.dataset.state=st;$('#status-t').textContent=txt;
+}
+function renderScore(){
+  var c=cur,shared=cfg().shared;
+  setText($('#s-cans'),String(c.total));
+  setText($('#s-overs'),String(c.water));
+  setText($('#s-bill'),money(c.cost+shared));
+}
+function renderBanner(){
+  var b=$('#banner'),msg='';
+  if(!ui.canWrite)msg='View-only access: you can follow the leaderboard but not add cans. Ask the organiser for Contributor access.';
+  else if(ui.mode==='local')msg='Live sync is off here, so everything is saved on this phone only.';
+  else if(ui.mode==='stale')msg='Cannot reach live data right now. The numbers may be out of date.';
+  b.hidden=!msg;b.textContent=msg;
+}
+function renderGear(){$('#gear').hidden=!(ui.isAdmin||!db);$('#btn-addplayer').hidden=!(ui.canWrite&&(ui.isAdmin||!db))}
+
+function emptyHTML(){
+  var can=ui.canWrite;
+  return '<li class="empty"><b>Nobody is on the board</b>First ball is yours.'+(can?'<br><button class="btn primary" data-act="join-new">Join the match</button>':'')+'</li>';
+}
+function mixLine(p){
+  var bm=brandMap(),ks=Object.keys(p.by).sort(function(a,b){return p.by[b]-p.by[a]});
+  if(!ks.length)return '';
+  return '<span class="mix">'+(ks.length>1?ks.length+' brands: ':'')+esc(ks.slice(0,3).map(function(k){return (bm[k]?bm[k].name:k)+' '+p.by[k]}).join(', '))+(ks.length>3?' +'+(ks.length-3)+' more':'')+'</span>';
+}
+function renderBoard(){
+  var list=$('#board-list'),ps=ranked(cur.P);
+  if(!ps.length){list.innerHTML=emptyHTML();$('#awards-wrap').hidden=true;return}
+  var lead=Math.max(1,ps[0].cans),bm=brandMap();
+  list.innerHTML=ps.map(function(p){
+    var open=!!ui.open[p.id],pct=Math.round(p.cans/lead*100),due=p.cost+shareEach();
+    var tags=Object.keys(p.by).map(function(k){var b=bm[k];return '<span class="tag">'+esc(b?b.name:k)+' × '+p.by[k]+'</span>'}).join('');
+    if(p.water)tags+='<span class="tag water">Water × '+p.water+'</span>';
+    if(!tags)tags='<span class="line">Nothing logged yet.</span>';
+    var mine0=findMine(),isMe=!!(mine0&&mine0.id===p.id),entries=Object.keys(state.drinks).filter(function(k){return state.drinks[k].pid===p.id}).length;
+    var edit=(ui.canWrite&&(ui.isAdmin||!db||isMe))?'<button class="btn" data-act="edit-player" data-pid="'+esc(p.id)+'">Edit name or team</button>':'';
+    if(ui.canWrite&&(ui.isAdmin||!db)){
+      edit+=ui.rmArm===p.id?'<button class="btn danger" data-act="remove-player" data-pid="'+esc(p.id)+'">Tap again: remove '+esc(p.name)+(entries?' and '+plural(entries,'entry'):'')+'</button>':'<button class="btn" data-act="remove-player" data-pid="'+esc(p.id)+'">Remove player</button>';
+    }
+    return '<li class="row'+(p.rank===1&&p.cans>0?' r1':'')+'">'+
+      '<button class="row-main" data-act="toggle-row" data-pid="'+esc(p.id)+'" aria-expanded="'+open+'">'+
+        '<span class="rank">'+p.rank+'</span>'+
+        '<span><span class="nm">'+esc(p.name)+'</span><span class="tm"><i class="dot" style="--h:'+teamHue(p.team)+'"></i>'+esc(teamName(p.team))+'</span>'+mixLine(p)+'</span>'+
+        '<span class="score"><b>'+p.cans+'</b><small>'+(p.cans===1?'over':'overs')+'</small></span>'+
+      '</button>'+
+      '<div class="bar"><span style="width:'+pct+'%"></span></div>'+
+      '<div class="detail"'+(open?'':' hidden')+'><div class="tags">'+tags+'</div><div class="line">Bill so far '+money(due)+'</div>'+edit+'</div>'+
+    '</li>';
+  }).join('');
+  renderAwards(ps);
+}
+function renderAwards(ps){
+  var out=[],beer=ps.filter(function(p){return p.cans>0});
+  if(beer.length){
+    var top=beer[0];out.push({k:'Player of the day',n:top.name,s:plural(top.cans,'over')+' bowled'});
+    var hop=beer.slice().sort(function(a,b){return Object.keys(b.by).length-Object.keys(a.by).length||b.cans-a.cans})[0];
+    if(Object.keys(hop.by).length>=2)out.push({k:'All-rounder',n:hop.name,s:Object.keys(hop.by).length+' brands tried'});
+    var roll=beer.slice().sort(function(a,b){return b.recent-a.recent})[0];
+    if(roll.recent>=2)out.push({k:'On a roll',n:roll.name,s:roll.recent+' in the last hour'});
+    var op=beer.slice().sort(function(a,b){return a.first-b.first})[0];
+    out.push({k:'Opening bowler',n:op.name,s:'first can at '+timeStr(op.first)});
+    if(beer.length>=3){var tail=beer.slice().sort(function(a,b){return a.cans-b.cans||a.name.localeCompare(b.name)})[0];
+      out.push({k:'Night watchman',n:tail.name,s:plural(tail.cans,'can')+', still standing'})}
+  }
+  var wet=ps.slice().sort(function(a,b){return b.water-a.water})[0];
+  if(wet&&wet.water>0)out.push({k:'Spirit of cricket',n:wet.name,s:plural(wet.water,'water')});
+  $('#awards-wrap').hidden=!out.length;
+  $('#awards').innerHTML=out.map(function(a){return '<div class="award"><div class="k">'+esc(a.k)+'</div><div class="n">'+esc(a.n)+'</div><div class="s">'+esc(a.s)+'</div></div>'}).join('');
+}
+
+var whoSig='',teamSig='';
+function playersOf(t){return Object.keys(state.players).map(function(id){return {id:id,name:state.players[id].name||'?',team:state.players[id].team|0}}).filter(function(p){return p.team===t}).sort(function(a,b){return a.name.localeCompare(b.name)})}
+function cartItems(){var bm=brandMap();return Object.keys(ui.cart).filter(function(k){return ui.cart[k]>0&&bm[k]}).map(function(k){return {brand:k,qty:ui.cart[k]}})}
+function renderLog(){
+  var teams=cfg().teams,mine=findMine(),bm=brandMap();
+  if(ui.team==null||ui.team<0||ui.team>6)ui.team=mine?(mine.team|0):0;
+  var ts=$('#team'),tsig=teams.join('|');
+  if(tsig!==teamSig){teamSig=tsig;ts.innerHTML=teams.map(function(t,i){return '<option value="'+i+'">'+esc(t)+'</option>'}).join('')}
+  ts.value=String(ui.team);
+  var ps=playersOf(ui.team);
+  if(!ui.who||!state.players[ui.who]||(state.players[ui.who].team|0)!==ui.team)
+    ui.who=(mine&&(mine.team|0)===ui.team?mine.id:null)||(ps[0]&&ps[0].id)||null;
+  var sig=ui.team+'#'+ps.map(function(p){return p.id+':'+p.name}).join('|')+'#'+(mine&&mine.id);
+  var sel=$('#who');
+  if(sig!==whoSig){
+    whoSig=sig;
+    sel.innerHTML=ps.length?ps.map(function(p){return '<option value="'+esc(p.id)+'">'+esc(p.name)+(mine&&mine.id===p.id?' (you)':'')+'</option>'}).join(''):'<option value="">No players in this team yet</option>';
+  }
+  sel.value=ui.who||'';
+  $('#btn-newplayer').hidden=!(ui.canWrite&&(ui.isAdmin||!db||!mine));
+  var bs=cfg().brands.concat([WATER]),used=cur.perBrand;
+  $('#brands').innerHTML=bs.map(function(b){
+    var q=ui.cart[b.id]||0,sub=b.water?'Free, counts for Spirit of Cricket':money(b.price)+' a can';
+    if(!b.water&&Number(b.stock)>0){var left=b.stock-(used[b.id]||0);sub+=' · '+left+' left'}
+    return '<div class="brand'+(b.water?' water':'')+'" data-on="'+(q>0)+'"><div><b>'+esc(b.name)+'</b><br><span>'+esc(sub)+'</span></div>'+
+      '<div class="mini"><button data-act="cart" data-brand="'+esc(b.id)+'" data-d="-1" aria-label="One fewer '+esc(b.name)+'"'+(q?'':' disabled')+'>−</button><output>'+q+'</output><button data-act="cart" data-brand="'+esc(b.id)+'" data-d="1" aria-label="One more '+esc(b.name)+'">+</button></div></div>';
+  }).join('');
+  var add=$('#add'),items=cartItems(),pl=state.players[ui.who];
+  if(!ui.canWrite){add.textContent='View-only access';add.disabled=true}
+  else if(!pl){add.textContent='Pick or add a player first';add.disabled=true}
+  else if(!items.length){add.textContent='Tap + on a brand to add it';add.disabled=true}
+  else{
+    var n=items.reduce(function(s,i){return s+i.qty},0);
+    add.textContent='Add '+n+' for '+pl.name+' ('+items.map(function(i){return i.qty+' × '+bm[i.brand].name}).join(', ')+')';
+    add.disabled=ui.busy;
+  }
+  var keys=Object.keys(state.drinks).filter(function(k){return state.players[state.drinks[k].pid]}).sort(function(a,b){return state.drinks[b].ts-state.drinks[a].ts}).slice(0,8);
+  $('#feed').innerHTML=keys.length?keys.map(function(k){
+    var d=state.drinks[k],bn=bm[d.brand]?bm[d.brand].name:(d.bn||d.brand);
+    var btn=ui.arm===k?'<button class="x arm" data-act="undo" data-id="'+esc(k)+'">Remove?</button>':'<button class="x" data-act="undo" data-id="'+esc(k)+'" aria-label="Remove this entry">×</button>';
+    return '<li><span class="f-main"><b>'+esc(state.players[d.pid].name)+'</b> <span>'+d.qty+' × '+esc(bn)+'</span></span><span class="f-time">'+timeStr(d.ts)+'</span>'+(ui.canWrite&&(ui.isAdmin||!db||d.by===myUid)?btn:'')+'</li>';
+  }).join(''):'<li class="feed-empty">Nothing logged yet.</li>';
+}
+
+function renderTeams(){
+  var teams=cfg().teams,ps=ranked(cur.P),T=teams.map(function(n,i){return {i:i,name:n,cans:0,water:0,n:0,top:null}});
+  ps.forEach(function(p){var t=T[p.team];if(!t)return;t.cans+=p.cans;t.water+=p.water;t.n++;if(!t.top||p.cans>t.top.cans)t.top=p});
+  T.sort(function(a,b){return b.cans-a.cans||a.name.localeCompare(b.name)});
+  var lead=Math.max(1,T[0].cans),r=0,prev=null;
+  $('#team-list').innerHTML=T.map(function(t,i){
+    if(t.cans!==prev){r=i+1;prev=t.cans}
+    var avg=t.n?(t.cans/t.n).toFixed(1):'0.0';
+    var sub=t.n?plural(t.n,'player')+' · '+avg+' each'+(t.top&&t.top.cans>0?' · top: '+esc(t.top.name):''):'No players yet';
+    return '<li class="team"><div class="team-top"><span class="rank">'+r+'</span><div><div class="tn"><i class="dot" style="--h:'+teamHue(t.i)+'"></i>'+esc(t.name)+'</div><div class="ts">'+sub+'</div></div><div class="score"><b>'+t.cans+'</b><small>'+(t.cans===1?'over':'overs')+'</small></div></div><div class="bar"><span style="width:'+Math.round(t.cans/lead*100)+'%"></span></div></li>';
+  }).join('');
+}
+
+function shareEach(){var n=Object.keys(state.players).length,s=cfg().shared;return n&&s?Math.ceil(s/n):0}
+function renderBill(){
+  var ps=ranked(cur.P),share=shareEach(),due=0,got=0;
+  var rows=ps.map(function(p){var d=p.cost+share;var paid=!!(state.paid[p.id]&&state.paid[p.id].paid);due+=d;if(paid)got+=d;return {p:p,d:d,paid:paid}}).sort(function(a,b){return b.d-a.d||a.p.name.localeCompare(b.p.name)});
+  $('#bill-sum').innerHTML=
+    '<div><span>Beer</span><b>'+money(cur.cost)+'</b></div>'+
+    '<div><span>Shared costs</span><b>'+money(cfg().shared)+'</b></div>'+
+    '<div><span>Everyone owes</span><b>'+money(due)+'</b></div>'+
+    '<div><span>Collected</span><b>'+money(got)+'</b></div>';
+  $('#bill-note').textContent=share?'incl. '+money(share)+' shared each':'';
+  $('#bill-list').innerHTML=rows.length?rows.map(function(r){
+    var pill=ui.isAdmin||!db?'<button class="pill '+(r.paid?'paid':'due')+'" data-act="toggle-paid" data-pid="'+esc(r.p.id)+'" aria-pressed="'+r.paid+'">'+(r.paid?'Paid':'Mark paid')+'</button>':'<span class="pill '+(r.paid?'paid':'due')+'" style="display:inline-block;text-align:center">'+(r.paid?'Paid':'Due')+'</span>';
+    return '<li><div><span class="nm">'+esc(r.p.name)+'</span><span class="tm"><i class="dot" style="--h:'+teamHue(r.p.team)+'"></i>'+esc(teamName(r.p.team))+' · '+plural(r.p.cans,'can')+'</span>'+mixLine(r.p)+'</div><span class="amt">'+money(r.d)+'</span>'+pill+'</li>';
+  }).join(''):'<li class="feed-empty">Bills appear once players join.</li>';
+  var bs=cfg().brands.filter(function(b){return Number(b.stock)>0||cur.perBrand[b.id]});
+  $('#stock').innerHTML=bs.length?'<li class="hd"><span>Brand</span><span>Bought</span><span>Drunk</span><span>Left</span></li>'+bs.map(function(b){
+    var used=cur.perBrand[b.id]||0,bought=Number(b.stock)||0,left=bought-used;
+    return '<li><span>'+esc(b.name)+'</span><span>'+(bought||'–')+'</span><span>'+used+'</span><span class="'+(bought&&left<=Math.max(6,bought*.1)?'low':'')+'">'+(bought?left:'–')+'</span></li>';
+  }).join(''):'<li class="feed-empty">Add cans bought per brand in settings to track what is left.</li>';
+  $('#btn-csv').hidden=!dl||!rows.length;
+}
+
+function renderAll(){
+  cur=compute(state.drinks);
+  renderStatus();renderScore();renderBanner();renderGear();renderBoard();renderLog();renderTeams();renderBill();
+}
+var raf=0;
+function schedule(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;renderAll();maybeJoin()})}
+
+/* ---------- toast ---------- */
+var toastT=0;
+function toast(msg){var t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){t.hidden=true},5200)}
+
+/* ---------- commentary ---------- */
+function commentary(pid,items){
+  var bm=brandMap(),nm=state.players[pid].name;
+  var beer=items.filter(function(i){return i.brand!=='water'});
+  var wat=items.filter(function(i){return i.brand==='water'}).reduce(function(s,i){return s+i.qty},0);
+  var before=compute(state.drinks),tmp=Object.assign({},state.drinks),now=Date.now();
+  items.forEach(function(i,k){tmp['__new'+k]={pid:pid,brand:i.brand,qty:i.qty,ts:now}});
+  var after=compute(tmp),pb=before.P[pid],pa=after.P[pid];
+  if(!beer.length)return 'Spirit of Cricket! '+nm+' reaches for water. '+plural(pa.water,'water')+' so far.';
+  var qty=beer.reduce(function(s,i){return s+i.qty},0);
+  var rb=ranked(before.P),ra=ranked(after.P);
+  var rkB=rb.filter(function(p){return p.id===pid})[0].rank,rkA=ra.filter(function(p){return p.id===pid})[0].rank;
+  var pre=['','One over.','Two overs.','Three overs.','FOUR overs!','Five overs.','SIX overs!'][qty]||'Maximum!';
+  var extra;
+  if(before.total===0)extra='First over on the board, '+nm+' opens the bowling.';
+  else if(ra[0].id===pid&&rb[0].id!==pid&&rb[0].cans<pa.cans)extra='New leader: '+nm+' on '+plural(pa.cans,'over')+'.';
+  else if(Math.floor(pa.cans/5)>Math.floor(pb.cans/5))extra='Milestone: '+nm+' has now bowled '+pa.cans+' overs.';
+  else if(rkA<rkB)extra=nm+' moves up to #'+rkA+'.';
+  else extra=nm+' is on '+plural(pa.cans,'over')+'.';
+  var what=beer.length===1?(qty+' × '+bm[beer[0].brand].name):(qty+' overs across '+beer.length+' brands');
+  var s=pre+' '+what+'. '+extra;
+  if(wat)s+=' Water too, nice.';
+  if(pa.recent>=4)s+=' That is '+pa.recent+' in the last hour. Water break?';
+  return s;
+}
+
+/* ---------- writes ---------- */
+function writeFail(e){
+  if(e&&e.code==='permission_denied'){toast('You can only remove your own entries.');return}
+  if(e&&e.code==='invalid_argument'){ui.canWrite=false;schedule();toast('Your access is view-only. Ask the organiser for Contributor access.')}
+  else if(e&&e.code==='quota_exceeded')toast('The match database is full. Tell the organiser.');
+  else toast('Could not save that. Check your connection and try again.');
+}
+async function putDoc(col,id,rec){
+  if(db){var ref=id?db.collection(col).doc(id):db.collection(col).doc();await ref.set(rec);return ref.id}
+  id=id||rid();
+  if(col==='players')state.players[id]=Object.assign({id:id},rec);
+  else if(col==='paid')state.paid[id]=rec;
+  persist();schedule();return id;
+}
+async function onAdd(){
+  if(ui.busy)return;
+  var pid=ui.who,items=cartItems(),bm=brandMap();
+  if(!state.players[pid]||!items.length)return;
+  ui.busy=true;renderLog();
+  try{
+    var msg=commentary(pid,items),now=Date.now();
+    var recs=items.map(function(i,k){var b=bm[i.brand];return {pid:pid,brand:i.brand,bn:b.name,pr:Number(b.price)||0,qty:i.qty,ts:now+k,by:myUid||null}});
+    for(var k=0;k<recs.length;k++){
+      if(db)await db.collection('drinks').add(recs[k]);
+      else state.drinks[rid()]=recs[k];
+    }
+    if(!db){persist();schedule()}
+    toast(msg);ui.cart={};
+  }catch(e){writeFail(e)}
+  ui.busy=false;renderLog();
+}
+async function onUndo(id){
+  if(ui.arm!==id){ui.arm=id;renderLog();setTimeout(function(){if(ui.arm===id){ui.arm=null;renderLog()}},3200);return}
+  ui.arm=null;
+  try{
+    if(db)await db.collection('drinks').doc(id).delete();
+    else{delete state.drinks[id];persist();schedule()}
+    toast('Entry removed.');
+  }catch(e){writeFail(e)}
+  renderLog();
+}
+async function removePlayer(pid){
+  var p=state.players[pid];if(!p)return;
+  if(ui.rmArm!==pid){ui.rmArm=pid;renderBoard();setTimeout(function(){if(ui.rmArm===pid){ui.rmArm=null;renderBoard()}},4000);return}
+  ui.rmArm=null;
+  var ids=Object.keys(state.drinks).filter(function(k){return state.drinks[k].pid===pid});
+  try{
+    if(db){
+      for(var i=0;i<ids.length;i++)await db.collection('drinks').doc(ids[i]).delete();
+      await db.doc('paid/'+pid).delete();
+      await db.collection('players').doc(pid).delete();
+    }else{
+      ids.forEach(function(k){delete state.drinks[k]});delete state.paid[pid];delete state.players[pid];persist();schedule();
+    }
+    delete ui.open[pid];toast(p.name+' removed.');
+  }catch(e){writeFail(e)}
+  renderAll();
+}
+async function onTogglePaid(pid){
+  var now=!(state.paid[pid]&&state.paid[pid].paid);
+  try{
+    if(db)await db.doc('paid/'+pid).set({paid:now});
+    else{state.paid[pid]={paid:now};persist();schedule()}
+  }catch(e){writeFail(e)}
+}
+
+/* ---------- player sheet ---------- */
+function openSheet(id){var s=$(id);s.hidden=false;ui.sheet=id}
+function closeSheets(){['#sheet-player','#sheet-settings'].forEach(function(s){$(s).hidden=true});ui.sheet=null}
+function openPlayer(mode,pid){
+  var teams=cfg().teams,p=pid?state.players[pid]:null;
+  ui.pSheet={mode:mode,pid:pid||null};
+  $('#sp-title').textContent=mode==='edit'?'Edit player':(mode==='me'?'Join the match':'Add a player');
+  $('#sp-hint').textContent=mode==='me'?'Pick your team first, then the name your mates will recognise.':(mode==='edit'?'Fix a typo or move them to the right team.':'Adding someone who has no phone handy? Log their cans yourself.');
+  $('#sp-name').value=p?p.name:(mode==='me'&&authUser&&authUser.displayName?authUser.displayName.slice(0,24):'');
+  $('#sp-team').innerHTML=teams.map(function(t,i){return '<option value="'+i+'">'+esc(t)+'</option>'}).join('');
+  $('#sp-team').value=String(p?(p.team|0):(ui.team||0));
+  openSheet('#sheet-player');
+  setTimeout(function(){$('#sp-name').focus()},50);
+}
+async function savePlayer(){
+  var name=$('#sp-name').value.trim().slice(0,24),team=parseInt($('#sp-team').value,10)||0,m=ui.pSheet;
+  if(!name){$('#sp-name').focus();return}
+  try{
+    var id;
+    if(m.mode==='edit'){
+      var rec=Object.assign({},state.players[m.pid]);delete rec.id;rec.name=name;rec.team=team;
+      id=await putDoc('players',m.pid,rec);
+    }else{
+      var r={name:name,team:team,ts:Date.now()},fixed=null;
+      if(m.mode==='me'&&myUid){r.uid=myUid;fixed='u-'+safeId(myUid)}
+      id=await putDoc('players',fixed,r);
+    }
+    ui.who=id;ui.team=team;savePref();closeSheets();
+    if(m.mode!=='edit')toast(name+' is in for '+teamName(team)+'.');
+    schedule();
+  }catch(e){writeFail(e)}
+}
+function maybeJoin(){
+  if(ui.joinAsked||!ui.ready||!ui.canWrite)return;
+  if(db&&myUid){if(!ui.playersLive)return;if(!findMine()){ui.joinAsked=true;openPlayer('me')}}
+  else if(!Object.keys(state.players).length){ui.joinAsked=true;openPlayer('me')}
+}
+
+/* ---------- settings sheet ---------- */
+function brandRow(b){
+  return '<div class="set-row" data-id="'+esc(b.id||'')+'"><input type="text" class="sb-name" maxlength="28" aria-label="Brand name" value="'+esc(b.name||'')+'" placeholder="Brand"><input type="number" class="sb-price" inputmode="numeric" min="0" aria-label="Price per can" value="'+esc(b.price==null?'':b.price)+'"><input type="number" class="sb-stock" inputmode="numeric" min="0" aria-label="Cans bought" value="'+esc(b.stock||'')+'"><button class="x" data-act="rm-brand-row" aria-label="Remove brand">×</button></div>';
+}
+function openSettings(){
+  var c=cfg();
+  $('#ss-teams').innerHTML=c.teams.map(function(t,i){return '<input type="text" class="st-name" maxlength="20" aria-label="Team '+(i+1)+' name" value="'+esc(t)+'">'}).join('');
+  $('#ss-brands').innerHTML=c.brands.map(brandRow).join('');
+  $('#ss-shared').value=c.shared||'';
+  openSheet('#sheet-settings');
+}
+async function saveSettings(){
+  var teams=[].map.call(document.querySelectorAll('.st-name'),function(i,n){return i.value.trim().slice(0,20)||('Team '+String.fromCharCode(65+n))});
+  var brands=[].map.call(document.querySelectorAll('#ss-brands .set-row'),function(r){
+    var name=r.querySelector('.sb-name').value.trim().slice(0,28);if(!name)return null;
+    var id=r.dataset.id||(name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,20)+'-'+rid().slice(0,4));
+    return {id:id,name:name,price:Math.max(0,Number(r.querySelector('.sb-price').value)||0),stock:Math.max(0,Math.round(Number(r.querySelector('.sb-stock').value)||0))};
+  }).filter(Boolean);
+  if(!brands.length){toast('Keep at least one brand.');return}
+  var rec={brands:brands,teams:teams,shared:Math.max(0,Math.round(Number($('#ss-shared').value)||0))};
+  try{
+    if(db)await db.doc('config/main').set(rec);
+    else{state.config=rec;persist();schedule()}
+    closeSheets();toast('Settings saved.');
+  }catch(e){
+    if(e&&e.code==='invalid_argument')toast('Only the organiser can change settings.');else writeFail(e);
+  }
+}
+
+/* ---------- CSV ---------- */
+function cell(v){var s=String(v==null?'':v);if(/^[=+\-@]/.test(s))s="'"+s;return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}
+async function exportCsv(){
+  if(!dl)return;
+  var share=shareEach(),rows=[['Player','Team','Cans','Water','Beer (INR)','Shared (INR)','Total (INR)','Paid','Brands']];
+  ranked(cur.P).forEach(function(p){rows.push([p.name,teamName(p.team),p.cans,p.water,p.cost,share,p.cost+share,(state.paid[p.id]&&state.paid[p.id].paid)?'yes':'no',Object.keys(p.by).map(function(k){var b=brandMap()[k];return (b?b.name:k)+' x'+p.by[k]}).join('; ')])});
+  try{await dl.save({filename:'beer-league-2026-bill.csv',data:'﻿'+rows.map(function(r){return r.map(cell).join(',')}).join('\n')})}
+  catch(e){if(!e||e.code!=='declined')toast('Could not save the file here.')}
+}
+
+/* ---------- events ---------- */
+function showTab(t){
+  ui.tab=t;
+  ['board','log','teams','bill'].forEach(function(n){$('#tab-'+n).hidden=n!==t});
+  [].forEach.call(document.querySelectorAll('.tabs [role=tab]'),function(b){b.setAttribute('aria-selected',String(b.dataset.tab===t))});
+  window.scrollTo(0,0);
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-act]');if(!t)return;
+  var a=t.dataset.act;
+  if(a==='tab')showTab(t.dataset.tab);
+  else if(a==='toggle-row'){var id=t.dataset.pid;ui.open[id]=!ui.open[id];renderBoard()}
+  else if(a==='cart'){var k=t.dataset.brand,v=Math.min(24,Math.max(0,(ui.cart[k]||0)+parseInt(t.dataset.d,10)));if(v)ui.cart[k]=v;else delete ui.cart[k];renderLog()}
+  else if(a==='add')onAdd();
+  else if(a==='undo')onUndo(t.dataset.id);
+  else if(a==='join-new')openPlayer(ui.isAdmin||!db||!myUid?'new':'me');
+  else if(a==='edit-player')openPlayer('edit',t.dataset.pid);
+  else if(a==='remove-player')removePlayer(t.dataset.pid);
+  else if(a==='close-sheet')closeSheets();
+  else if(a==='save-player')savePlayer();
+  else if(a==='open-settings')openSettings();
+  else if(a==='save-settings')saveSettings();
+  else if(a==='add-brand-row'){$('#ss-brands').insertAdjacentHTML('beforeend',brandRow({}))}
+  else if(a==='rm-brand-row'){var r=t.closest('.set-row');if(r)r.remove()}
+  else if(a==='toggle-paid')onTogglePaid(t.dataset.pid);
+  else if(a==='csv')exportCsv();
+  else if(a==='google')googleSignIn();
+  else if(a==='claim-yes'){if(claimDone)claimDone(true)}
+  else if(a==='claim-no'){if(claimDone)claimDone(false)}
+  else if(a==='signout'){BE.A.signOut(BE.auth).then(function(){location.reload()})}
+});
+$('#who').addEventListener('change',function(e){ui.who=e.target.value;savePref();renderLog()});
+$('#team').addEventListener('change',function(e){ui.team=parseInt(e.target.value,10)||0;ui.who=null;savePref();renderLog()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.sheet)closeSheets();if(e.key==='Enter'&&ui.sheet==='#sheet-player'&&e.target.id==='sp-name')savePlayer()});
+[].forEach.call(document.querySelectorAll('.overlay'),function(o){o.addEventListener('click',function(e){if(e.target===o)closeSheets()})});
+
+/* ---------- boot ---------- */
+var BE=null,authUser=null,authDone=null,claimDone=null,shim={db:null,user:null};
+var dlShim={save:function(o){var b=new Blob([o.data],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=o.filename;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},3000);return Promise.resolve({status:'saved'})}};
+function use(n){return Promise.resolve(n==='db'?shim.db:n==='user'?shim.user:n==='downloads'?dlShim:null)}
+function fbErr(e,kind){var c=(e&&e.code)||'';if(c==='permission-denied')return {code:kind==='delete'?'permission_denied':'invalid_argument'};if(c==='resource-exhausted')return {code:'quota_exceeded'};return {code:'unavailable'}}
+function makeDb(be){
+  var fs=be.fs,fdb=be.fdb,OPT={includeMetadataChanges:true};
+  function snapDoc(d){return {id:d.id,data:function(){return d.data()}}}
+  function docApi(ref){return {id:ref.id,
+    set:function(d){return fs.setDoc(ref,d).catch(function(e){throw fbErr(e,'set')})},
+    delete:function(){return fs.deleteDoc(ref).catch(function(e){throw fbErr(e,'delete')})},
+    onSnapshot:function(n,er){return fs.onSnapshot(ref,OPT,function(d){n({id:d.id,exists:d.exists(),data:function(){return d.data()},metadata:d.metadata})},function(){if(er)er({code:'revoked'})})}}}
+  return {
+    collection:function(name){var c=fs.collection(fdb,name);return {
+      onSnapshot:function(n,er){return fs.onSnapshot(c,OPT,function(sn){n({docs:sn.docs.map(snapDoc),metadata:sn.metadata})},function(){if(er)er({code:'revoked'})})},
+      doc:function(id){return docApi(id?fs.doc(fdb,name,id):fs.doc(c))},
+      add:function(d){return fs.addDoc(c,d).then(function(r){return {id:r.id}}).catch(function(e){throw fbErr(e,'set')})}
+    }},
+    doc:function(path){return docApi(fs.doc.apply(null,[fdb].concat(path.split('/'))))}
+  };
+}
+async function setupBackend(){
+  var c=window.FIREBASE_CONFIG;
+  if(!c||!c.apiKey||/^PASTE/.test(c.apiKey))return null;
+  var V='https://www.gstatic.com/firebasejs/10.14.1/';
+  var m=await Promise.all([import(V+'firebase-app.js'),import(V+'firebase-auth.js'),import(V+'firebase-firestore.js')]);
+  var app=m[0].initializeApp(c),fs=m[2],fdb;
+  try{fdb=fs.initializeFirestore(app,{localCache:fs.persistentLocalCache({tabManager:fs.persistentMultipleTabManager()})})}catch(e){fdb=fs.getFirestore(app)}
+  return {A:m[1],auth:m[1].getAuth(app),fs:fs,fdb:fdb};
+}
+function waitAuth(be){return new Promise(function(res){var off=be.A.onAuthStateChanged(be.auth,function(u){off();res(u)})})}
+function showSignIn(){return new Promise(function(res){$('#sheet-auth').hidden=false;authDone=function(u){$('#sheet-auth').hidden=true;res(u)}})}
+function askClaim(){return new Promise(function(res){$('#sheet-claim').hidden=false;claimDone=function(v){$('#sheet-claim').hidden=true;res(v)}})}
+async function googleSignIn(){
+  try{var r=await BE.A.signInWithPopup(BE.auth,new BE.A.GoogleAuthProvider());if(authDone)authDone(r.user)}
+  catch(e){
+    var c=(e&&e.code)||'';
+    if(c==='auth/popup-blocked'||c==='auth/operation-not-supported-in-this-environment'){BE.A.signInWithRedirect(BE.auth,new BE.A.GoogleAuthProvider());return}
+    var el=$('#sa-err');el.hidden=false;el.textContent='Sign-in did not finish. Check that this site is an authorised domain in Firebase, then try again.';
+  }
+}
+function subscribe(){
+  var timer=setTimeout(function(){if(ui.mode==='connecting'){ui.mode='stale';schedule()}},10000);
+  function live(snap){if(snap.metadata&&!snap.metadata.fromCache){ui.mode='live';clearTimeout(timer)}}
+  function err(e){if(e&&e.code==='revoked'){ui.mode='stale';schedule()}}
+  db.collection('players').onSnapshot(function(snap){
+    var o={};snap.docs.forEach(function(d){o[d.id]=Object.assign({id:d.id},d.data())});state.players=o;
+    live(snap);if(!snap.metadata.fromCache)ui.playersLive=true;ui.ready=true;schedule();
+  },err);
+  db.collection('drinks').onSnapshot(function(snap){
+    var o={};snap.docs.forEach(function(d){o[d.id]=d.data()});state.drinks=o;live(snap);schedule();
+  },err);
+  db.doc('config/main').onSnapshot(function(d){state.config=d.exists?d.data():null;live(d);schedule()},err);
+  db.collection('paid').onSnapshot(function(snap){
+    var o={};snap.docs.forEach(function(d){o[d.id]=d.data()});state.paid=o;schedule();
+  },err);
+}
+async function init(){
+  try{$('#sub').textContent='Cricket day · '+new Date().toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}catch(e){}
+  loadPref();renderAll();
+  try{BE=await setupBackend()}catch(e){BE=null}
+  if(BE){
+    try{
+      var u=await waitAuth(BE);if(!u)u=await showSignIn();
+      authUser=u;
+      var oref=BE.fs.doc(BE.fdb,'meta','owner'),os=await BE.fs.getDoc(oref),ownerUid=null;
+      if(os.exists())ownerUid=os.data().uid;
+      else if(await askClaim()){try{await BE.fs.setDoc(oref,{uid:u.uid,name:u.displayName||'',ts:Date.now()});ownerUid=u.uid}catch(e){}}
+      shim.db=makeDb(BE);
+      shim.user={id:function(){return Promise.resolve(u.uid)},canEdit:function(){return Promise.resolve(ownerUid===u.uid)},can:function(){return Promise.resolve(true)}};
+      var w=$('#whoami');w.hidden=false;w.innerHTML='Signed in as '+esc(u.displayName||u.email||'you')+' · <button class="linkbtn" data-act="signout">Sign out</button>';
+    }catch(e){shim.db=null;shim.user=null}
+  }
+  var res=await Promise.all([use('db'),use('user'),use('downloads')]);
+  db=res[0];user=res[1];dl=res[2];
+  if(!db){
+    loadLocal();ui.mode='local';ui.ready=true;ui.isAdmin=true;
+    renderAll();maybeJoin();return;
+  }
+  try{
+    if(user){
+      myUid=await user.id();
+      ui.isAdmin=!!(await user.canEdit());
+      var can=await user.can('data.write');
+      if(can===false)ui.canWrite=false;
+    }
+  }catch(e){}
+  subscribe();renderAll();
+}
+init();
+})();
+</script>
+</body>
+</html>
